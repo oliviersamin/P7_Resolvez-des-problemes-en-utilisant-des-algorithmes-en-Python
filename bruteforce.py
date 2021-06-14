@@ -12,6 +12,8 @@
 
 import csv
 from collections import deque
+import math
+
 
 csv_filename = 'data_bruteforce.csv'
 shares_list = []
@@ -47,49 +49,55 @@ def transform_list_to_deque(list_shares: list) -> deque:
 def generate_rotations_over_the_deque(deque_to_use: deque):
     """ main function to generate all the rotations needed to get all the possible combinations"""
     count_of_iterations = 0
-    deque_first_iteration = basic_rotations_over_the_deque(deque_to_use)
+    list_first_iteration = basic_rotations_over_the_deque(deque_to_use)
     count_of_iterations += 1
-    check_correct_rotations(deque_first_iteration)
-    final_deque = loop_over_all_rotations_for_one_level(deque_first_iteration)
-    # print(final_deque)
-    return final_deque
+    level = 1
+    list_for_while_loop = list_first_iteration.copy()
+    while level < len(list_first_iteration) - 1:
+        list_for_while_loop = loop_over_all_rotations_for_one_level(list_for_while_loop, level)
+        level += 1
+        print('{}  sur {}'.format(level, len(list_first_iteration) - 1))
+    return list_for_while_loop
 
 
-def loop_over_all_rotations_for_one_level(deque_to_use: deque) -> list:
-    """ loop ok for one level of rotations (if len(deque to use) = n, the rotations will be made
-     only for n-1 and not until 2"""
+def loop_over_all_rotations_for_one_level(list_to_use: list, level) -> list:
+    """ loop for one level of rotations """
     loop_list = []
-    for index, elem in enumerate(deque_to_use):
-        print('index = ', index+1)
-        temp_list, end_of_loops = basic_rotation_over_deque_less_first_element(elem)
+    for index, elem in enumerate(list_to_use):
+        # print('index = ', index+1)
+        temp_list = basic_rotation_over_deque_less_i_elements(elem, level)
         for el in temp_list:
             loop_list.append(el)
-        check_correct_rotations(loop_list[-1])
-        print('len(loop_list) = ', len(loop_list), loop_list)
+        # check_correct_rotations(loop_list[-1])
+        # print('len(loop_list) = ', len(loop_list))
     return loop_list
 
 
-def basic_rotation_over_deque_less_first_element(deque_to_use: deque) -> list:
-    """ generate a deque where there are rotations over all its element but the first one
-     example: input = ([1,2,3,4])
-            output = ([1,2,3,4],[1,4,2,3],[1,3,4,2])"""
+def basic_rotation_over_deque_less_i_elements(deque_to_use: deque, nb_elements) -> list:
+    """ generate a deque where there are rotations over all its element but the nb_elements first ones
+        example:    input = ([1,2,3,4], nb_elements = 1)
+                    output = [[1,2,3,4],[1,4,2,3],[1,3,4,2]]
+
+        example 2:  input = ([1,2,3,4], nb_elements = 2)
+                    output = [[1,2,3,4],[1,2,4,3]]
+    """
+
     loop_list = []
     deque_loop = deque_to_use.copy()
-    first_share = deque_loop.popleft()
-    end_of_loops = (len(deque_loop) == 2)
-    print('basic_rotation_over_deque_less_first_element, len(deque_loop) = {}, {}'.format(len(deque_loop), end_of_loops))
+    shares = []
+    number = 0
+    while number < nb_elements:
+        number += 1
+        shares.append(deque_loop.popleft())
     deque_loop = basic_rotations_over_the_deque(deque_loop)
     for elem in deque_loop:
-        loop_list.append(elem)
-    return loop_list, end_of_loops
+        loop_list.append(deque(shares))
+        for share in elem:
+            loop_list[-1].append(share)
+    return loop_list
 
 
-def check_correct_rotations(data_to_check):
-    """ verify that the rotations made create the right amount of combinations """
-    print("combinations created = ", len(data_to_check))
-
-
-def basic_rotations_over_the_deque(deque_to_use: deque) -> deque:
+def basic_rotations_over_the_deque(deque_to_use: deque) -> list:
     """ first function to launch when starting algo (generate a list of deque)"""
     number_of_rotations = len(deque_to_use)
     output_list = []
@@ -101,10 +109,11 @@ def basic_rotations_over_the_deque(deque_to_use: deque) -> deque:
         output_list.append(list_shares)
         deque_to_use.rotate(1)
         count += 1
-    return deque(output_list)
+    return output_list
 
 
 def calculate_best_rotation_for_profit(result: list) -> list:
+    capital_to_use = 500
     best_profit = 0
     best_rotation = []
     for index, rotation in enumerate(result):
@@ -119,19 +128,23 @@ def calculate_best_rotation_for_profit(result: list) -> list:
                 best_profit = profit/len(rotation)
                 best_rotation = rotation
     print('best profit = {} %'.format(round(best_profit, 2)))
-    # print(best_rotation)
-    return best_rotation
+    print('capital restant = A CALCULER!!!' )
+    print(best_rotation)
+    # return best_rotation
 
 
 def main():
+    number = 9
     read_csv_file(csv_filename)
     shares = transform_list_to_deque(shares_list)
     test_shares = []
     for index, share in enumerate(shares):
-        if index < 4:
+        if index < number:
             test_shares.append(share)
     test_shares = deque(test_shares)
-    final_deque = generate_rotations_over_the_deque(test_shares)
+    final_list = generate_rotations_over_the_deque(test_shares)
+    print(len(final_list), math.factorial(number))
+    calculate_best_rotation_for_profit(final_list)
 
 
 if __name__ == "__main__":
