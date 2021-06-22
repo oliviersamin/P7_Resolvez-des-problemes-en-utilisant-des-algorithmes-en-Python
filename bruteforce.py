@@ -11,19 +11,18 @@
 # MAXIMISER LE PROFIT = avoir le max d'argent en poche soit (argent final - 500)/500
 
 import csv
-from collections import deque
-import math
+import time as t
+from itertools import permutations as perm
 
 
 csv_filename = 'data_bruteforce.csv'
-shares_list = []
-results = []
-capital = 500
+capital_to_invest = 500
 
 
-def read_csv_file(csv_file: str) -> None:
+def read_csv_file(csv_file: str) -> list:
     """ read the csv file and load the list following the format:
         [{'name': 'action1', 'price': 100, 'profit': 10}, ...]"""
+    shares_list = []
     with open(csv_file, newline='', encoding='utf-8') as f:
         reader = csv.reader(f)
         headers = []
@@ -32,120 +31,148 @@ def read_csv_file(csv_file: str) -> None:
                 headers = row
             else:
                 shares_list.append({headers[0]: row[0], headers[1]: int(row[1]), headers[2]: int(row[2])})
+    return shares_list
 
 
-def sort_shares_list_by_profit(share: dict) -> int:
+def sort_shares_list_by_price(share: dict) -> int:
     """ used by transform_list_to_deque() to sort a list of dictionary by 'Profit' key """
-    return share['Profit']
+    return share['Price']
 
 
-def transform_list_to_deque(list_shares: list) -> deque:
+def sort_shares_list_by_gain(share: dict) -> int:
+    """ used by transform_list_to_deque() to sort a list of dictionary by 'Profit' key """
+    return share['Gain']
+
+
+def sorted_list_result(list_shares: list) -> list:
     """  """
-    list_shares.sort(key=sort_shares_list_by_profit, reverse=True)
+    list_shares.sort(key=sort_shares_list_by_gain, reverse=True)
     # print('list_shares = ', list_shares)
-    return deque(list_shares)
+    return list_shares
 
 
-def generate_rotations_over_the_deque(deque_to_use: deque):
-    """ main function to generate all the rotations needed to get all the possible combinations"""
-    count_of_iterations = 0
-    list_first_iteration = basic_rotations_over_the_deque(deque_to_use)
-    count_of_iterations += 1
-    level = 1
-    list_for_while_loop = list_first_iteration.copy()
-    while level < len(list_first_iteration) - 1:
-        list_for_while_loop = loop_over_all_rotations_for_one_level(list_for_while_loop, level)
-        level += 1
-        print('{}  sur {}'.format(level, len(list_first_iteration) - 1))
-    return list_for_while_loop
+def sorted_list(list_shares: list) -> list:
+    """  """
+    list_shares.sort(key=sort_shares_list_by_price, reverse=True)
+    # print('list_shares = ', list_shares)
+    return list_shares
 
 
-def loop_over_all_rotations_for_one_level(list_to_use: list, level) -> list:
-    """ loop for one level of rotations """
-    loop_list = []
-    for index, elem in enumerate(list_to_use):
-        # print('index = ', index+1)
-        temp_list = basic_rotation_over_deque_less_i_elements(elem, level)
-        for el in temp_list:
-            loop_list.append(el)
-        # check_correct_rotations(loop_list[-1])
-        # print('len(loop_list) = ', len(loop_list))
-    return loop_list
+def creation_list_shares_with_price_constraint(best_permutation: list, permutation,
+                                               capital_to_use: int) -> list:
+    """ select the shares to use in the permutation that respect the total price capital """
 
-
-def basic_rotation_over_deque_less_i_elements(deque_to_use: deque, nb_elements) -> list:
-    """ generate a deque where there are rotations over all its element but the nb_elements first ones
-        example:    input = ([1,2,3,4], nb_elements = 1)
-                    output = [[1,2,3,4],[1,4,2,3],[1,3,4,2]]
-
-        example 2:  input = ([1,2,3,4], nb_elements = 2)
-                    output = [[1,2,3,4],[1,2,4,3]]
-    """
-
-    loop_list = []
-    deque_loop = deque_to_use.copy()
-    shares = []
-    number = 0
-    while number < nb_elements:
-        number += 1
-        shares.append(deque_loop.popleft())
-    deque_loop = basic_rotations_over_the_deque(deque_loop)
-    for elem in deque_loop:
-        loop_list.append(deque(shares))
-        for share in elem:
-            loop_list[-1].append(share)
-    return loop_list
-
-
-def basic_rotations_over_the_deque(deque_to_use: deque) -> list:
-    """ first function to launch when starting algo (generate a list of deque)"""
-    number_of_rotations = len(deque_to_use)
-    output_list = []
-    count = 0
-    while count < number_of_rotations:
-        list_shares = deque()
-        for share in deque_to_use:
+    capital_left = capital_to_use
+    list_shares = []
+    # print('permutation = ', permutation)
+    for share in permutation:
+        # print(share)
+        if capital_left - share['Price'] >= 0:
             list_shares.append(share)
-        output_list.append(list_shares)
-        deque_to_use.rotate(1)
-        count += 1
-    return output_list
+            capital_left -= share['Price']
+        # else:
+            # print('trop cher')
+    # print('list_shares = ',list_shares)
+    # print('idem = ', list_shares==permutation)
+    best_permutation = get_best_permutation(list_shares, best_permutation)
+    return best_permutation
 
 
-def calculate_best_rotation_for_profit(result: list) -> list:
-    capital_to_use = 500
-    best_profit = 0
-    best_rotation = []
-    for index, rotation in enumerate(result):
-        profit = 0.
-        for share in rotation:
-            profit += share['Profit']
-        if not best_rotation:
-            best_profit = profit/len(rotation)
-            best_rotation = rotation
+def get_best_permutation(permutation: list, best_permutation: list) -> list:
+    """ calculate the profit of a permutation and compare it to the best_permutation
+        if better, it become the best permutation, otherwise it is thrown in the trash
+        best_permutation = [{'Name': 'Action1', 'Price': 20, 'Profit': 5},..., gains]"""
+    gains = 0.
+    for share in permutation:
+        gains += share['Price']*(share['Profit']/100.)
+    gains = round(gains, 2)
+    # print(gains)
+    try:
+        if gains > best_permutation[-1]:
+            for share in permutation:
+                best_permutation.append(share)
+            # print(best_permutation)
+            best_permutation.append(gains)
+            # print(best_permutation)
+            return best_permutation
         else:
-            if profit/len(rotation) > best_profit:
-                best_profit = profit/len(rotation)
-                best_rotation = rotation
-    print('best profit = {} %'.format(round(best_profit, 2)))
-    print('capital restant = A CALCULER!!!' )
-    print(best_rotation)
-    # return best_rotation
+            return best_permutation
+    except IndexError:
+        list_to_return = permutation
+        list_to_return.append(gains)
+        return(list_to_return)
 
 
-def main():
-    number = 9
-    read_csv_file(csv_filename)
-    shares = transform_list_to_deque(shares_list)
+def operation_to_share_into_processors(permutation, best_permutation, capital):
+    """ this is the part of the algorithm that needs to be share for multiprocessing """
+    best_permutation = creation_list_shares_with_price_constraint(best_permutation, permutation, capital)
+    return best_permutation
+
+
+def choose_number_of_shares_to_treat(number: int, shares: list, best_permutation: list, capital: int) -> object:
+    start = t.localtime()
     test_shares = []
     for index, share in enumerate(shares):
         if index < number:
             test_shares.append(share)
-    test_shares = deque(test_shares)
-    final_list = generate_rotations_over_the_deque(test_shares)
-    print(len(final_list), math.factorial(number))
-    calculate_best_rotation_for_profit(final_list)
+    generator = perm(test_shares)
+    # pool = multiprocessing.Pool()
+    # operation_to_share_into_processors(generator, best_permutation, capital)
+    # temp = partial(operation_to_share_into_processors, "best_permutation", "capital")
+    # best_permutation = pool.imap(temp, generator, chunksize=500000)
+    # pool.close()
+    # pool.join()
+    for permutation in generator:
+        best_permutation = creation_list_shares_with_price_constraint(best_permutation, permutation, capital)
+    best_permutation[-1] = round(best_permutation[-1]/capital*100.,2)
+    end = t.localtime()
+    duration_hour = end.tm_hour - start.tm_hour
+    duration_min = end.tm_min - start.tm_min
+    duration_sec = end.tm_sec - start.tm_sec
+    print("duree de l'analyse: {} h {} min et {} sec".format(duration_hour, duration_min, duration_sec))
+    # print('meilleure permutation = ', best_permutation[:-1])
+    print('profit = {}%'.format(best_permutation[-1]))
+    return best_permutation
+
+
+def function_o_2n(capital_max, shares, shares_kept=[]):
+    """ use a recursive function to go faster """
+    if shares:
+        gain1, list_share1, capital = function_o_2n(capital_max, shares[1:], shares_kept)
+        share = shares[0]
+        if share['Price'] <= capital_max:
+            gain2, list_share2, capital = function_o_2n(capital_max - share['Price'], shares[1:], shares_kept +
+                                                             [share])
+            if gain1 < gain2:
+                return gain2, list_share2, capital
+        return gain1, list_share1, capital
+    else:
+        return sum([i['Gain'] for i in shares_kept]), shares_kept, capital_max
+
+
+def create_gain_by_share(list_of_shares: list) -> list:
+    """ get a list of shares and calculate from its 'profit' its 'gain' in euros """
+    for share in list_of_shares:
+        share['Gain'] = round(share['Profit']*share['Price']/100.,3)
+    return list_of_shares
+
+
+def main():
+    """ main function """
+    # print('calcul for {} shares'.format(number))
+    shares_list = read_csv_file(csv_filename)
+    shares_list = create_gain_by_share(shares_list)
+    shares = sorted_list(shares_list)
+    # print(shares)
+    max_gain, list_shares, capital_restant = function_o_2n(capital_to_invest, shares)
+    list_shares = sorted_list_result(list_shares)
+    # best_permutation = choose_number_of_shares_to_treat(number, shares, best_permutation, capital)
+    print('liste d actions: {}\ncapital restant = {} euros'.format(list_shares, len(list_shares), capital_restant))
+    print('gain en euros: {} soit {}%'.format(round(max_gain,2), round(max_gain/capital_to_invest*100.,2)))
+    print(sorted_list_result(shares))
+
 
 
 if __name__ == "__main__":
+    # print(timeit.timeit("main()", number = 5))
     main()
