@@ -93,6 +93,7 @@ def main():
     print('gain en euros: {} soit {}%'.format(round(max_gain,2), round(max_gain/capital_to_invest*100.,2)))
     print('temps d exécution du programme = {} secondes'.format(round(end-start,2)))
 
+
 if __name__ == "__main__":
     # print(timeit.timeit("main()", number = 5))
     main()
