@@ -64,19 +64,34 @@ def create_gain_by_share(list_of_shares: list) -> list:
     return list_of_shares
 
 
-def brute_force(capital_max, shares, shares_kept=[]):
+def brute_force_gain(capital_max, shares, shares_kept=[]):
     """ use a recursive function to go faster """
     if shares:
-        gain1, list_share1, capital = brute_force(capital_max, shares[1:], shares_kept)
+        gain1, list_share1, capital = brute_force_gain(capital_max, shares[1:], shares_kept)
         share = shares[0]
         if share['Price'] <= capital_max:
-            gain2, list_share2, capital = brute_force(capital_max - share['Price'], shares[1:], shares_kept +
+            gain2, list_share2, capital = brute_force_gain(capital_max - share['Price'], shares[1:], shares_kept +
                                                              [share])
             if gain1 < gain2:
                 return gain2, list_share2, capital
         return gain1, list_share1, capital
     else:
         return sum([i['Gain'] for i in shares_kept]), shares_kept, capital_max
+
+
+def brute_force_pourcentage(capital_max, shares, shares_kept=[]):
+    """ use a recursive function to go faster """
+    if shares:
+        p1, list_share1, capital = brute_force_pourcentage(capital_max, shares[1:], shares_kept)
+        share = shares[0]
+        if share['Price'] <= capital_max:
+            p2, list_share2, capital = brute_force_pourcentage(capital_max - share['Price'], shares[1:],
+                                                                  shares_kept + [share])
+            if p1 < p2:
+                return p2, list_share2, capital
+        return p1, list_share1, capital
+    else:
+        return sum([i['Profit'] for i in shares_kept]), shares_kept, capital_max
 
 
 def main():
@@ -86,12 +101,21 @@ def main():
     shares_list = read_csv_file(csv_filename)
     shares_list = create_gain_by_share(shares_list)
     shares = sorted_list(shares_list)
-    max_gain, list_shares, capital_restant = brute_force(capital_to_invest, shares)
-    list_shares = sorted_list_result(list_shares)
+    max_gain, list_shares, capital_restant = brute_force_gain(capital_to_invest, shares)
+    total_pourcentage, list_shares2, capital_restant2 = brute_force_pourcentage(capital_to_invest, shares)
+    gain = sum([share['Gain'] for share in list_shares2])
+    # list_shares = sorted_list_result(list_shares)
     end = t.time()
+    print('------ GAIN -------')
     print('liste d actions: {}\ncapital restant = {} euros'.format(list_shares, len(list_shares), capital_restant))
     print('gain en euros: {} soit {}%'.format(round(max_gain,2), round(max_gain/capital_to_invest*100.,2)))
-    print('temps d exécution du programme = {} secondes'.format(round(end-start,2)))
+    # print('temps d exécution du programme = {} secondes'.format(round(end-start,2)))
+
+    print('------ POURCENTAGE -------')
+    print('liste d actions: {}\ncapital restant = {} euros'.format(list_shares2, len(list_shares2), capital_restant2))
+    print('gain en euros: {} soit {}%'.format(round(gain,2), round(gain/capital_to_invest*100.,2)))
+    print(total_pourcentage)
+    # print('temps d exécution du programme = {} secondes'.format(round(end-start,2)))
 
 
 if __name__ == "__main__":
