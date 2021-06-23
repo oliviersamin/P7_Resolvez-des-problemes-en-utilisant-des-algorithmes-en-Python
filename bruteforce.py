@@ -7,9 +7,6 @@
 #                 5. MUST TRY ALL THE POSSIBLE COMBINATIONS AND SELECT THE BEST ONE
 #                 6. Display only the best result
 
-# CALCUL DU PROFIT FINAL = moyenne pondérée = 20% * (x euros/500 euros) + 18% * (y euros/500 euros)...
-# MAXIMISER LE PROFIT = avoir le max d'argent en poche soit (argent final - 500)/500
-
 import csv
 import time as t
 
@@ -31,30 +28,6 @@ def read_csv_file(csv_file: str) -> list:
             else:
                 shares_list.append({headers[0]: row[0], headers[1]: int(row[1]), headers[2]: int(row[2])})
     return shares_list
-
-
-def sort_shares_list_by_price(share: dict) -> int:
-    """ used by transform_list_to_deque() to sort a list of dictionary by 'Profit' key """
-    return share['Price']
-
-
-def sort_shares_list_by_gain(share: dict) -> int:
-    """ used by transform_list_to_deque() to sort a list of dictionary by 'Profit' key """
-    return share['Gain']
-
-
-def sorted_list_result(list_shares: list) -> list:
-    """  """
-    list_shares.sort(key=sort_shares_list_by_gain, reverse=True)
-    # print('list_shares = ', list_shares)
-    return list_shares
-
-
-def sorted_list(list_shares: list) -> list:
-    """  """
-    list_shares.sort(key=sort_shares_list_by_price, reverse=True)
-    # print('list_shares = ', list_shares)
-    return list_shares
 
 
 def create_gain_by_share(list_of_shares: list) -> list:
@@ -100,21 +73,24 @@ def main():
     start = t.time()
     shares_list = read_csv_file(csv_filename)
     shares_list = create_gain_by_share(shares_list)
-    shares = sorted_list(shares_list)
-    max_gain, list_shares, capital_restant = brute_force_gain(capital_to_invest, shares)
-    total_pourcentage, list_shares2, capital_restant2 = brute_force_pourcentage(capital_to_invest, shares)
-    gain = sum([share['Gain'] for share in list_shares2])
+    max_gain, list_shares, capital_restant = brute_force_gain(capital_to_invest, shares_list)
+    # total_pourcentage, list_shares2, capital_restant2 = brute_force_pourcentage(capital_to_invest, shares)
+    # gain = sum([share['Gain'] for share in list_shares2])
     # list_shares = sorted_list_result(list_shares)
     end = t.time()
     print('------ GAIN -------')
-    print('liste d actions: {}\ncapital restant = {} euros'.format(list_shares, len(list_shares), capital_restant))
+    print('liste d actions: {}\ncapital restant = {} euros'.format(list_shares, capital_restant))
+    print("nombre d'actions achetées = ", len(list_shares))
     print('gain en euros: {} soit {}%'.format(round(max_gain,2), round(max_gain/capital_to_invest*100.,2)))
-    # print('temps d exécution du programme = {} secondes'.format(round(end-start,2)))
+    print('temps d exécution du programme = {} secondes'.format(round(end-start,2)))
 
-    print('------ POURCENTAGE -------')
-    print('liste d actions: {}\ncapital restant = {} euros'.format(list_shares2, len(list_shares2), capital_restant2))
-    print('gain en euros: {} soit {}%'.format(round(gain,2), round(gain/capital_to_invest*100.,2)))
-    print(total_pourcentage)
+    for share in list_shares:
+        print(share['Name'])
+
+    # print('------ POURCENTAGE -------')
+    # print('liste d actions: {}\ncapital restant = {} euros'.format(list_shares2, len(list_shares2), capital_restant2))
+    # print('gain en euros: {} soit {}%'.format(round(gain,2), round(gain/capital_to_invest*100.,2)))
+    # print(total_pourcentage)
     # print('temps d exécution du programme = {} secondes'.format(round(end-start,2)))
 
 
