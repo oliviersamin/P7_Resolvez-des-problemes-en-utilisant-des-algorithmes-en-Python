@@ -33,7 +33,7 @@ def read_csv_file(csv_file: str) -> list:
 def create_gain_by_share(list_of_shares: list) -> list:
     """ get a list of shares and calculate from its 'profit' its 'gain' in euros """
     for share in list_of_shares:
-        share['Gain'] = round(share['Profit']*share['Price']/100.,3)
+        share['Gain'] = round(share['profit']*share['price']/100.,3)
     return list_of_shares
 
 
@@ -42,8 +42,8 @@ def brute_force_gain(capital_max, shares, shares_kept=[]):
     if shares:
         gain1, list_share1, capital = brute_force_gain(capital_max, shares[1:], shares_kept)
         share = shares[0]
-        if share['Price'] <= capital_max:
-            gain2, list_share2, capital = brute_force_gain(capital_max - share['Price'], shares[1:], shares_kept +
+        if share['price'] <= capital_max:
+            gain2, list_share2, capital = brute_force_gain(capital_max - share['price'], shares[1:], shares_kept +
                                                              [share])
             if gain1 < gain2:
                 return gain2, list_share2, capital
@@ -57,14 +57,14 @@ def brute_force_pourcentage(capital_max, shares, shares_kept=[]):
     if shares:
         p1, list_share1, capital = brute_force_pourcentage(capital_max, shares[1:], shares_kept)
         share = shares[0]
-        if share['Price'] <= capital_max:
-            p2, list_share2, capital = brute_force_pourcentage(capital_max - share['Price'], shares[1:],
+        if share['price'] <= capital_max:
+            p2, list_share2, capital = brute_force_pourcentage(capital_max - share['price'], shares[1:],
                                                                   shares_kept + [share])
             if p1 < p2:
                 return p2, list_share2, capital
         return p1, list_share1, capital
     else:
-        return sum([i['Profit'] for i in shares_kept]), shares_kept, capital_max
+        return sum([i['profit'] for i in shares_kept]), shares_kept, capital_max
 
 
 def main():
@@ -85,7 +85,7 @@ def main():
     print('temps d exécution du programme = {} secondes'.format(round(end-start,2)))
 
     for share in list_shares:
-        print(share['Name'])
+        print(share['name'])
 
     # print('------ POURCENTAGE -------')
     # print('liste d actions: {}\ncapital restant = {} euros'.format(list_shares2, len(list_shares2), capital_restant2))
